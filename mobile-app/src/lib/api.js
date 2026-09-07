@@ -13,3 +13,11 @@ export async function submitIdentification({ species, confidence, latitude, long
 
   return response.json();
 }
+
+export async function fetchIdentifications() {
+  const response = await fetch(`${API_URL}/api/identifications`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch identifications: ${response.status}`);
+  }
+  return response.json();
+}

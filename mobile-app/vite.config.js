@@ -14,7 +14,7 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Tree Species Recognition",
+        name: "Tree Identifier",
         short_name: "TreeID",
         start_url: ".",
         display: "standalone",
