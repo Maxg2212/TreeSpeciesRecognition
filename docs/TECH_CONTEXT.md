@@ -102,10 +102,15 @@ Reasoning:
   `navigator.geolocation`**, even when accessed via a local LAN IP over
   plain HTTP — the call silently fails with `PERMISSION_DENIED`. Camera
   capture via the file input is unaffected, only geolocation is blocked.
-  - Fix implemented: `@vitejs/plugin-basic-ssl` serves the Vite dev server
-    over HTTPS with a self-signed cert. Safari shows a one-time "not
-    private connection" warning per device; accepting it is enough for
-    local testing.
+  - Fix implemented: [mkcert](https://github.com/FiloSottile/mkcert)
+    generates a locally-trusted HTTPS certificate for `localhost` + the
+    LAN IP (`mobile-app/scripts/generate-certs.sh`, consumed directly by
+    `vite.config.js`), replacing an earlier `@vitejs/plugin-basic-ssl`
+    self-signed cert that triggered a "not private connection" warning on
+    every device. Trusting mkcert's local CA is a one-time, per-machine
+    setup (`mkcert -install`, root required) — see `mobile-app/README.md`
+    for that and for trusting the CA on the iPhone itself (installing
+    `rootCA.pem` as a configuration profile).
   - `server.host = true` in `vite.config.js` exposes the dev server on the
     LAN (not just localhost), needed to reach it from the iPhone.
 - Scaffolded mobile app code already exists at `mobile-app/` (Vite config,
