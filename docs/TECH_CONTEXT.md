@@ -71,12 +71,22 @@ Reasoning:
 
 - The canopy image shown in the web app is **fetched from an external
   provider**, not captured by the user.
-- **Decision: Esri ArcGIS World Imagery**
-  (`World_Imagery/MapServer`) — free public REST tile service, ~1 m
-  resolution for most of the world including Central America (up to
-  0.3–0.5 m in some urban areas), no auth required for basic use.
-- **Fallback option: MapTiler** (tile-based, decent resolution, easy
-  integration) if Esri has coverage/quota issues.
+- **Decision: Google Maps Static API** (`maptype=satellite`) — center +
+  zoom static image endpoint. Requires a Google Cloud project with the
+  Maps Static API enabled and **billing turned on** (a card on file is
+  required even within the free monthly allowance — unlike the earlier
+  options below). Project already had a Google API key available.
+- Earlier options, tried in order before settling here:
+  - **Esri ArcGIS World Imagery** (`World_Imagery/MapServer`) — free
+    public REST tile service, no auth required, ~1 m resolution for most
+    of the world including Central America. First choice; worked, no
+    account needed.
+  - **MapTiler Static Maps API** — free tier (100,000 requests / 5,000
+    sessions per month, non-commercial use), no billing required. Tried
+    second; implemented but never shipped (superseded by Google before
+    being tested live).
+  - Both remain viable fallbacks if Google's billing requirement or
+    quota ever becomes a problem.
 - Ruled out: Sentinel Hub (~10 m/px — too coarse for an individual tree
   canopy) and USGS EarthExplorer (batch/download-oriented, high-res
   coverage mostly US-only via NAIP).

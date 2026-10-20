@@ -3,7 +3,7 @@
 Node.js + Express + Prisma (SQLite for local dev/demo, swappable to Postgres).
 
 Stores identification attempts sent by the mobile app and proxies a
-satellite canopy image (Esri ArcGIS World Imagery) for each one.
+satellite canopy image (Google Maps Static API) for each one.
 
 ## Setup
 
@@ -16,6 +16,16 @@ npm run dev
 ```
 
 Server listens on `http://localhost:3001` by default.
+
+### Google Maps API key
+
+The canopy endpoint requires a Google Cloud project with the **Maps
+Static API** enabled and **billing turned on** — unlike the alternatives
+considered earlier (Esri, MapTiler), Google requires a card on file even
+to stay within the free monthly allowance. Set a budget alert in [Google
+Cloud Console](https://console.cloud.google.com/billing) once billing is
+on. Grab the key from [console.cloud.google.com/google/maps-apis](https://console.cloud.google.com/google/maps-apis)
+and set `GOOGLE_MAPS_API_KEY` in `.env`.
 
 ## Endpoints
 
@@ -53,9 +63,9 @@ curl http://localhost:3001/api/identifications/1
 
 ### `GET /api/identifications/:id/canopy`
 
-Proxies a cropped PNG from Esri ArcGIS World Imagery centered on the
-record's GPS coordinates. Crop size is controlled by `CANOPY_BBOX_DEGREES`
-in `.env`.
+Proxies a PNG from Google's Maps Static API centered on the record's GPS
+coordinates. Crop tightness is controlled by `CANOPY_ZOOM` in `.env`
+(Static Maps uses a zoom level, not a bounding box).
 
 ```bash
 curl http://localhost:3001/api/identifications/1/canopy --output canopy.png

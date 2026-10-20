@@ -7,10 +7,10 @@ const prisma = new PrismaClient();
 const app = express();
 
 const PORT = process.env.PORT || 3001;
-const CANOPY_BBOX_DEGREES = Number(process.env.CANOPY_BBOX_DEGREES || 0.0015);
-const ESRI_WORLD_IMAGERY_URL =
-  process.env.ESRI_WORLD_IMAGERY_URL ||
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export";
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+// Static Maps uses a zoom level, not a bbox — ~20 frames roughly a single
+// tree's canopy; raise/lower to widen or tighten the crop.
+const CANOPY_ZOOM = process.env.CANOPY_ZOOM || "20";
 
 app.use(cors());
 app.use(express.json());
@@ -67,19 +67,20 @@ app.get("/api/identifications/:id/canopy", async (req, res) => {
     return res.status(404).json({ error: "not found" });
   }
 
+  if (!GOOGLE_MAPS_API_KEY) {
+    return res.status(500).json({ error: "GOOGLE_MAPS_API_KEY is not set" });
+  }
+
   const { latitude, longitude } = identification;
-  const half = CANOPY_BBOX_DEGREES / 2;
-  const bbox = [longitude - half, latitude - half, longitude + half, latitude + half].join(",");
 
-  const exportUrl = new URL(ESRI_WORLD_IMAGERY_URL);
-  exportUrl.searchParams.set("bbox", bbox);
-  exportUrl.searchParams.set("bboxSR", "4326");
-  exportUrl.searchParams.set("imageSR", "4326");
-  exportUrl.searchParams.set("size", "512,512");
-  exportUrl.searchParams.set("format", "png");
-  exportUrl.searchParams.set("f", "image");
+  const staticMapUrl = new URL("https://maps.googleapis.com/maps/api/staticmap");
+  staticMapUrl.searchParams.set("center", `${latitude},${longitude}`);
+  staticMapUrl.searchParams.set("zoom", CANOPY_ZOOM);
+  staticMapUrl.searchParams.set("size", "512x512");
+  staticMapUrl.searchParams.set("maptype", "satellite");
+  staticMapUrl.searchParams.set("key", GOOGLE_MAPS_API_KEY);
 
-  const upstream = await fetch(exportUrl);
+  const upstream = await fetch(staticMapUrl);
   if (!upstream.ok) {
     return res.status(502).json({ error: "failed to fetch canopy image" });
   }
