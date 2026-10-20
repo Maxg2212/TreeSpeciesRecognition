@@ -26,7 +26,18 @@ const CANOPY_ZOOM = process.env.CANOPY_ZOOM || "20";
 app.use(cors());
 app.use(express.json());
 
-app.post("/api/identifications", async (req, res) => {
+// Express 4 doesn't catch a rejected promise from an async handler — it
+// becomes an unhandled rejection and crashes the whole process (this is
+// what actually happened: a DB error on one request took the entire
+// server down, not just that request). Routes below use this wrapper so
+// any failure becomes a normal 500 response instead.
+function asyncHandler(handler) {
+  return (req, res, next) => {
+    handler(req, res, next).catch(next);
+  };
+}
+
+app.post("/api/identifications", asyncHandler(async (req, res) => {
   const { species, confidence, latitude, longitude } = req.body ?? {};
 
   if (typeof species !== "string" || species.trim() === "") {
@@ -44,16 +55,16 @@ app.post("/api/identifications", async (req, res) => {
   });
 
   res.status(201).json(identification);
-});
+}));
 
-app.get("/api/identifications", async (_req, res) => {
+app.get("/api/identifications", asyncHandler(async (_req, res) => {
   const identifications = await prisma.identification.findMany({
     orderBy: { createdAt: "desc" },
   });
   res.json(identifications);
-});
+}));
 
-app.get("/api/identifications/:id", async (req, res) => {
+app.get("/api/identifications/:id", asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) {
     return res.status(400).json({ error: "id must be an integer" });
@@ -65,9 +76,9 @@ app.get("/api/identifications/:id", async (req, res) => {
   }
 
   res.json(identification);
-});
+}));
 
-app.get("/api/identifications/:id/canopy", async (req, res) => {
+app.get("/api/identifications/:id/canopy", asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) {
     return res.status(400).json({ error: "id must be an integer" });
@@ -100,6 +111,14 @@ app.get("/api/identifications/:id/canopy", async (req, res) => {
   res.set("Cache-Control", "public, max-age=86400");
   const buffer = Buffer.from(await upstream.arrayBuffer());
   res.send(buffer);
+}));
+
+// Last-resort handler: turns any error asyncHandler forwards (or a
+// synchronous throw) into a plain 500 instead of an unhandled exception
+// crashing the whole process.
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: "internal server error" });
 });
 
 if (fs.existsSync(HTTPS_CERT_PATH) && fs.existsSync(HTTPS_KEY_PATH)) {
