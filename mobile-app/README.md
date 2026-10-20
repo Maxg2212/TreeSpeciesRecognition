@@ -4,6 +4,9 @@ React + Vite PWA. Captures a leaf photo, classifies it on-device with
 `onnxruntime-web`, captures GPS coordinates, and submits the result to the
 backend.
 
+> To run all three components (backend, mobile app, web app) with one
+> command, see the [repo root README](../README.md) instead.
+
 ## Setup
 
 ```bash

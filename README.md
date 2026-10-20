@@ -15,11 +15,27 @@ Three components:
 
 ## Getting started
 
-Each component has its own `README.md` with setup steps. Order:
+One-time setup — install each component's dependencies and the root
+dev-runner (each component also has its own `README.md` for details:
+`.env` files, the backend's database migration, the mobile app's HTTPS
+certs):
 
-1. `backend/` — start the API first, the other two depend on it.
-2. `mobile-app/` and `web-app/` — can be started in either order once the
-   backend is running.
+```bash
+npm install
+npm install --prefix backend
+npm install --prefix mobile-app
+npm install --prefix web-app
+```
+
+Then, every time, from the repo root:
+
+```bash
+npm run dev
+```
+
+This starts all three at once — backend, mobile app, web app — each
+labeled and color-coded in one terminal (via `concurrently`). Press
+`Ctrl+C` once to stop all three.
 
 No trained model is included yet — see
 [`mobile-app/public/model/README.md`](mobile-app/public/model/README.md).

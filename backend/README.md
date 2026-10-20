@@ -5,6 +5,9 @@ Node.js + Express + Prisma (SQLite for local dev/demo, swappable to Postgres).
 Stores identification attempts sent by the mobile app and proxies a
 satellite canopy image (Google Maps Static API) for each one.
 
+> To run all three components (backend, mobile app, web app) with one
+> command, see the [repo root README](../README.md) instead.
+
 ## Setup
 
 ```bash

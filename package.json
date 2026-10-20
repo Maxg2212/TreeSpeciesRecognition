@@ -1,0 +1,11 @@
+{
+  "name": "tree-species-recognition",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,mobile,web -c blue,green,yellow \"npm run dev --prefix backend\" \"npm run dev --prefix mobile-app\" \"npm run dev --prefix web-app\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
