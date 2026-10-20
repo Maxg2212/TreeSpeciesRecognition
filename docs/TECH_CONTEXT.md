@@ -147,10 +147,17 @@ Reasoning:
   - `POST /api/identifications` — mobile app sends `{ species, confidence?, latitude, longitude }` after each on-device classification.
   - `GET /api/identifications` — web app lists all attempts.
   - `GET /api/identifications/:id` — single record detail.
-  - `GET /api/identifications/:id/canopy` — proxies/generates a PNG canopy
-    view from Esri ArcGIS World Imagery's `/export` operation, cropped
-    around the record's GPS coordinates (bbox size configurable via
-    `CANOPY_BBOX_DEGREES`).
+  - `GET /api/identifications/:id/canopy` — proxies a PNG canopy view from
+    Google's Maps Static API (see §4), centered on the record's GPS
+    coordinates (zoom configurable via `CANOPY_ZOOM`).
+- **Backend serves HTTPS**, reusing the mkcert cert already set up for the
+  mobile app (§6) — not just a nicety. The mobile app is served over HTTPS
+  (required for geolocation), so a browser silently blocks it from
+  fetching a plain-HTTP backend ("mixed content"); this surfaced as a
+  `fetch`/`Load failed` error in the mobile app right after granting
+  location access, immediately after the backend was first wired up as
+  HTTP-only. Falls back to plain HTTP (with a startup warning) if the cert
+  files aren't found — fine for `web-app` alone, not for mobile testing.
 - Scaffolded backend code already exists at `backend/` (package.json,
   prisma schema, `src/index.js`, README with setup + curl examples).
 

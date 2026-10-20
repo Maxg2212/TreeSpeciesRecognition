@@ -1,4 +1,7 @@
 import "dotenv/config";
+import fs from "node:fs";
+import https from "node:https";
+import http from "node:http";
 import express from "express";
 import cors from "cors";
 import { PrismaClient } from "@prisma/client";
@@ -7,6 +10,14 @@ const prisma = new PrismaClient();
 const app = express();
 
 const PORT = process.env.PORT || 3001;
+// Reuses the mkcert cert already set up for the mobile app (see
+// mobile-app/README.md) — it already covers localhost + the LAN IP, which
+// this needs too. The mobile app is served over HTTPS (required for
+// navigator.geolocation on iOS Safari), so it can only fetch an HTTPS
+// backend: browsers silently block an HTTPS page calling plain HTTP
+// ("mixed content"), which is why this isn't optional for phone testing.
+const HTTPS_CERT_PATH = process.env.HTTPS_CERT_PATH || "../mobile-app/certs/dev-cert.pem";
+const HTTPS_KEY_PATH = process.env.HTTPS_KEY_PATH || "../mobile-app/certs/dev-key.pem";
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 // Static Maps uses a zoom level, not a bbox — ~20 frames roughly a single
 // tree's canopy; raise/lower to widen or tighten the crop.
@@ -91,6 +102,22 @@ app.get("/api/identifications/:id/canopy", async (req, res) => {
   res.send(buffer);
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`);
-});
+if (fs.existsSync(HTTPS_CERT_PATH) && fs.existsSync(HTTPS_KEY_PATH)) {
+  https
+    .createServer(
+      { cert: fs.readFileSync(HTTPS_CERT_PATH), key: fs.readFileSync(HTTPS_KEY_PATH) },
+      app
+    )
+    .listen(PORT, () => {
+      console.log(`Backend listening on https://localhost:${PORT}`);
+    });
+} else {
+  console.warn(
+    `No cert at ${HTTPS_CERT_PATH} — falling back to plain HTTP. The mobile ` +
+      `app (served over HTTPS) won't be able to reach this: run ` +
+      `mobile-app/scripts/generate-certs.sh first. See README.md.`
+  );
+  http.createServer(app).listen(PORT, () => {
+    console.log(`Backend listening on http://localhost:${PORT}`);
+  });
+}

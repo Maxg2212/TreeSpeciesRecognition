@@ -18,7 +18,15 @@ npx prisma migrate dev --name init
 npm run dev
 ```
 
-Server listens on `http://localhost:3001` by default.
+Server listens on `https://localhost:3001` by default — it reuses the
+mkcert cert from `mobile-app/certs/` (see `mobile-app/README.md` for the
+one-time mkcert setup), so **generate that cert first** or this falls back
+to plain HTTP with a startup warning. HTTPS here isn't optional if you're
+testing the mobile app: it's served over HTTPS (required for geolocation
+on iOS Safari), and a browser will silently block an HTTPS page from
+fetching a plain-HTTP backend ("mixed content") — this is the actual
+cause behind a `fetch`/`Load failed` error in the mobile app right after
+granting location access.
 
 ### Google Maps API key
 
@@ -43,7 +51,7 @@ Body:
 `confidence` is optional. Returns the created record (`201`).
 
 ```bash
-curl -X POST http://localhost:3001/api/identifications \
+curl -X POST https://localhost:3001/api/identifications \
   -H "Content-Type: application/json" \
   -d '{"species":"Guanacaste","confidence":0.92,"latitude":9.9281,"longitude":-84.0907}'
 ```
@@ -53,7 +61,7 @@ curl -X POST http://localhost:3001/api/identifications \
 Lists all attempts, newest first.
 
 ```bash
-curl http://localhost:3001/api/identifications
+curl https://localhost:3001/api/identifications
 ```
 
 ### `GET /api/identifications/:id`
@@ -61,7 +69,7 @@ curl http://localhost:3001/api/identifications
 Single record, or `404`.
 
 ```bash
-curl http://localhost:3001/api/identifications/1
+curl https://localhost:3001/api/identifications/1
 ```
 
 ### `GET /api/identifications/:id/canopy`
@@ -71,7 +79,7 @@ coordinates. Crop tightness is controlled by `CANOPY_ZOOM` in `.env`
 (Static Maps uses a zoom level, not a bounding box).
 
 ```bash
-curl http://localhost:3001/api/identifications/1/canopy --output canopy.png
+curl https://localhost:3001/api/identifications/1/canopy --output canopy.png
 ```
 
 ## Switching to PostgreSQL
