@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { classifyImage } from "../lib/classifier.js";
 import { getCurrentPosition } from "../lib/geolocation.js";
 import { submitIdentification } from "../lib/api.js";
@@ -17,7 +17,6 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const imageRef = useRef(null);
 
   async function handleFileSelected(event) {
     const file = event.target.files?.[0];
@@ -29,7 +28,9 @@ export default function Home() {
     setPreviewUrl(objectUrl);
 
     try {
-      const image = imageRef.current;
+      // Decoded off-DOM so classification doesn't depend on the preview
+      // <img> having already mounted from the setPreviewUrl above.
+      const image = new Image();
       image.src = objectUrl;
       await image.decode();
 
@@ -94,7 +95,6 @@ export default function Home() {
 
       {previewUrl && (
         <img
-          ref={imageRef}
           src={previewUrl}
           alt="Captured leaf"
           style={{ width: "100%", marginTop: "1rem", borderRadius: 8 }}

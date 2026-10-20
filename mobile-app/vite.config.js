@@ -32,12 +32,21 @@ export default defineConfig({
         icons: [],
       },
       workbox: {
-        // model.onnx can be large; make sure it's precached for offline use
-        // once inference has run at least once.
-        globPatterns: ["**/*.{js,css,html,onnx}"],
+        // model.onnx is excluded from precache — it's tens of MB, well past
+        // workbox's precache budget, and there's no offline-first
+        // requirement here (see docs/TECH_CONTEXT.md §7). The browser's
+        // normal HTTP cache still serves it after the first load.
+        globPatterns: ["**/*.{js,css,html}"],
       },
     }),
   ],
+  // Vite's dependency pre-bundling (esbuild) rewrites onnxruntime-web's wasm
+  // reference to a .vite/deps/ path that ends up empty, overriding our
+  // explicit wasmPaths config in classifier.js. Excluding it from
+  // pre-bundling leaves the package's own loading logic untouched.
+  optimizeDeps: {
+    exclude: ["onnxruntime-web"],
+  },
   server: {
     host: true,
     https: {

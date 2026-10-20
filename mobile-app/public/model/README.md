@@ -1,14 +1,20 @@
-Place the trained, exported model here as `model.onnx`.
+`model.onnx` is a Keras Xception classifier, exported via `tf2onnx`.
 
-Pipeline: train/fine-tune the classifier (TF/Keras) → export to `.onnx` via
-`tf2onnx` → drop the resulting file here as `model.onnx`.
+- Input: `224x224x3`, channels-last (NHWC), preprocessed with Xception's
+  own `preprocess_input` (scale pixels to `[-1, 1]`).
+- Output: already-softmaxed probabilities over 16 classes — do not apply
+  softmax again on the client.
+- Labels: `../../src/lib/class_names.json`, in the exact order the model
+  was trained on (index 0 = first output logit).
 
-Until a real model is added, `src/lib/classifier.js` will fail to load the
-session — that's expected; the rest of the capture/geolocate/submit flow
-can still be exercised by stubbing `classifyImage`.
+A second model (`densenet_model.onnx`, same 16 classes, ImageNet mean/std
+normalization instead of `[-1, 1]`) was trained alongside this one but
+isn't wired up — swap it in by pointing `MODEL_URL` at it and reverting
+`imageToTensor` in `src/lib/classifier.js` to mean/std normalization
+(`(pixel/255 - mean) / std`, not the current `pixel/127.5 - 1`).
 
-When the real model is added, update in `src/lib/classifier.js`:
-- `INPUT_SIZE` to match the model's expected input resolution
-- `INPUT_NAME` to match the model's actual input tensor name
-- `MEAN` / `STD` to match the normalization used during training
-- `LABELS` to the class order used during training
+If the model is ever re-exported, re-check `src/lib/classifier.js`
+against the new file — `classifyImage` reads input/output tensor names
+dynamically so a renamed Keras tensor won't break it, but the input
+*shape* and *preprocessing* are **not** read from the file and must match
+by hand.

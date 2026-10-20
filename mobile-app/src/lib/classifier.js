@@ -1,16 +1,26 @@
-import * as ort from "onnxruntime-web";
+// The default "onnxruntime-web" entry pulls in the full multi-backend
+// bundle (WebGPU/WebNN's jsep runtime included), whose wasm+loader pairing
+// doesn't resolve under Vite's dev server. We only need CPU wasm, so use
+// the dedicated wasm-only entry instead.
+import * as ort from "onnxruntime-web/wasm";
+// Explicit ?url import: lets Vite track this as a real asset (correctly
+// served in dev, copied+hashed in prod) instead of relying on ort's own
+// import.meta.url resolution, which doesn't survive Vite's dev server.
+import ortWasmUrl from "onnxruntime-web/ort-wasm-simd-threaded.wasm?url";
+import classNames from "./class_names.json";
 
-// Adjust these to match however the .onnx model was actually exported
-// (input tensor size, channel order, and normalization must match training).
+// xception_model.onnx: Keras Xception, input 224x224x3 channels-last (NHWC),
+// preprocessed with Xception's own preprocess_input (scale to [-1, 1]), output
+// already softmax probabilities over 16 classes (Dense(16, activation="softmax")).
 const MODEL_URL = "/model/model.onnx";
 const INPUT_SIZE = 224;
-const INPUT_NAME = "input";
-const MEAN = [0.485, 0.456, 0.406];
-const STD = [0.229, 0.224, 0.225];
 
-export const LABELS = [
-  // Fill in with the actual class order the model was trained with.
-];
+export const LABELS = classNames;
+
+ort.env.wasm.wasmPaths = { "ort-wasm-simd-threaded.wasm": ortWasmUrl };
+// Single-threaded: avoids needing cross-origin-isolation headers
+// (SharedArrayBuffer) that this dev setup doesn't send.
+ort.env.wasm.numThreads = 1;
 
 let sessionPromise = null;
 
@@ -34,36 +44,26 @@ function imageToTensor(imageElement) {
   ctx.drawImage(imageElement, 0, 0, INPUT_SIZE, INPUT_SIZE);
 
   const { data } = ctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
-  const floatData = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
   const pixelCount = INPUT_SIZE * INPUT_SIZE;
+  const floatData = new Float32Array(pixelCount * 3);
 
-  // HWC RGBA -> CHW RGB, normalized.
+  // HWC RGBA -> HWC RGB, scaled to [-1, 1] (Xception's preprocess_input).
   for (let i = 0; i < pixelCount; i++) {
-    const r = data[i * 4] / 255;
-    const g = data[i * 4 + 1] / 255;
-    const b = data[i * 4 + 2] / 255;
-    floatData[i] = (r - MEAN[0]) / STD[0];
-    floatData[pixelCount + i] = (g - MEAN[1]) / STD[1];
-    floatData[2 * pixelCount + i] = (b - MEAN[2]) / STD[2];
+    floatData[i * 3] = data[i * 4] / 127.5 - 1;
+    floatData[i * 3 + 1] = data[i * 4 + 1] / 127.5 - 1;
+    floatData[i * 3 + 2] = data[i * 4 + 2] / 127.5 - 1;
   }
 
-  return new ort.Tensor("float32", floatData, [1, 3, INPUT_SIZE, INPUT_SIZE]);
-}
-
-function softmax(logits) {
-  const max = Math.max(...logits);
-  const exps = logits.map((v) => Math.exp(v - max));
-  const sum = exps.reduce((a, b) => a + b, 0);
-  return exps.map((v) => v / sum);
+  return new ort.Tensor("float32", floatData, [1, INPUT_SIZE, INPUT_SIZE, 3]);
 }
 
 export async function classifyImage(imageElement) {
   const session = await getSession();
   const tensor = imageToTensor(imageElement);
-  const outputs = await session.run({ [INPUT_NAME]: tensor });
+  const [inputName] = session.inputNames;
   const [outputName] = session.outputNames;
-  const logits = Array.from(outputs[outputName].data);
-  const probabilities = softmax(logits);
+  const outputs = await session.run({ [inputName]: tensor });
+  const probabilities = Array.from(outputs[outputName].data);
 
   let bestIndex = 0;
   for (let i = 1; i < probabilities.length; i++) {
