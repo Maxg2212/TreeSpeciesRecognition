@@ -19,7 +19,7 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const imageRef = useRef(null);
 
-  async function handleCapture(event) {
+  async function handleFileSelected(event) {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -57,27 +57,38 @@ export default function Home() {
     }
   }
 
+  const buttonStyle = {
+    display: "block",
+    padding: "1rem",
+    textAlign: "center",
+    border: "2px dashed #2e7d32",
+    borderRadius: 8,
+    cursor: "pointer",
+  };
+
   return (
     <div>
-      <label
-        htmlFor="capture-input"
-        style={{
-          display: "block",
-          padding: "1rem",
-          textAlign: "center",
-          border: "2px dashed #2e7d32",
-          borderRadius: 8,
-          cursor: "pointer",
-        }}
-      >
-        Take a photo or choose one from the gallery
-      </label>
+      <div style={{ display: "flex", gap: "0.75rem" }}>
+        <label htmlFor="camera-input" style={{ ...buttonStyle, flex: 1 }}>
+          Take a photo
+        </label>
+        <label htmlFor="gallery-input" style={{ ...buttonStyle, flex: 1 }}>
+          Choose from gallery
+        </label>
+      </div>
       <input
-        id="capture-input"
+        id="camera-input"
         type="file"
         accept="image/*"
         capture="environment"
-        onChange={handleCapture}
+        onChange={handleFileSelected}
+        style={{ display: "none" }}
+      />
+      <input
+        id="gallery-input"
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelected}
         style={{ display: "none" }}
       />
 

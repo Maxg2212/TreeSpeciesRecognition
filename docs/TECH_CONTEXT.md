@@ -103,9 +103,11 @@ Reasoning:
 ## 6. Mobile app stack
 
 - **Decision: React + Vite**, built as a PWA via `vite-plugin-pwa`.
-- Capture flow: `<input type="file" accept="image/*" capture="environment">`
-  (simplest cross-browser way to open the native camera from a web app;
-  works fine over plain HTTP).
+- Capture flow: two separate `<input type="file" accept="image/*">`
+  elements — one with `capture="environment"` for the camera, one without
+  for the gallery/photo library picker. A single input with `capture` set
+  forces most mobile browsers straight into the camera and hides the
+  gallery option, so both are needed to offer the user a real choice.
 - Inference: `onnxruntime-web`, model loaded from `public/model/model.onnx`
   (see §2 for why ONNX over TF Lite here).
 - **Critical gotcha (confirmed): iOS Safari requires HTTPS for
