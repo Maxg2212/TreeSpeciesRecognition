@@ -37,5 +37,5 @@ This starts all three at once — backend, mobile app, web app — each
 labeled and color-coded in one terminal (via `concurrently`). Press
 `Ctrl+C` once to stop all three.
 
-No trained model is included yet — see
+XceptionModel was included, however DenseNet model it's also available in this project. See:
 [`mobile-app/public/model/README.md`](mobile-app/public/model/README.md).
