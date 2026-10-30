@@ -1,9 +1,6 @@
 # Tree Species Recognition
 
-Leaf-based tree species recognition system. See
-[docs/TECH_CONTEXT.md](docs/TECH_CONTEXT.md) for the full architecture and
-decisions.
-
+Leaf-based tree species recognition system. 
 Three components:
 
 - [`backend/`](backend/) — Node/Express/Prisma API. Stores identification
